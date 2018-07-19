@@ -1,5 +1,8 @@
+#!/usr/bin/env python3
+
 import socket
 import sys
+
 
 def response_ok(body=b"This is a minimal response", mimetype=b"text/plain"):
     """
@@ -32,13 +35,15 @@ def parse_request(request):
 
 def response_method_not_allowed():
     """Returns a 405 Method Not Allowed response"""
+
     pass
 
 
 def response_not_found():
     """Returns a 404 Not Found response"""
+    # return (a 404, see notes)
     pass
-    
+
 
 def resolve_uri(uri):
     """
@@ -71,17 +76,31 @@ def resolve_uri(uri):
     # TODO: Raise a NameError if the requested content is not present
     # under webroot.
 
+    absolute_path = os.path.join(os.getcwd(), "webroot", path.strip("/"))
+
+    if os.path.isfile(absolute_path):
+        with open(absolute_path, "rb") as f:
+            content = f.read()
+        mime_type = mimetypes.guess_type(absolute_path)[0].encode()
+    elif os.path.isdir(absolute_path):
+        content = " ".join(os.listdir(absolute_path))
+        mime_type = b"text/plain"
+    else:
+        raise NameError
+
+    return content.mime_type
+
     # TODO: Fill in the appropriate content and mime_type give the URI.
     # See the assignment guidelines for help on "mapping mime-types", though
     # you might need to create a special case for handling make_time.py
-    content = b"not implemented"
-    mime_type = b"not implemented"
+    # ### content = b"not implemented"
+    # ### mime_type = b"not implemented"
 
     return content, mime_type
 
 
 def server(log_buffer=sys.stderr):
-    address = ('127.0.0.1', 10000)
+    address = ("127.0.0.1", 10000)
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     print("making a server on {0}:{1}".format(*address), file=log_buffer)
@@ -90,18 +109,18 @@ def server(log_buffer=sys.stderr):
 
     try:
         while True:
-            print('waiting for a connection', file=log_buffer)
+            print("waiting for a connection", file=log_buffer)
             conn, addr = sock.accept()  # blocking
             try:
-                print('connection - {0}:{1}'.format(*addr), file=log_buffer)
+                print("connection - {0}:{1}".format(*addr), file=log_buffer)
                 while True:
                     data = conn.recv(16)
                     print('received "{0}"'.format(data), file=log_buffer)
                     if data:
-                        print('sending data back to client', file=log_buffer)
+                        print("sending data back to client", file=log_buffer)
                         conn.sendall(data)
                     else:
-                        msg = 'no more data from {0}:{1}'.format(*addr)
+                        msg = "no more data from {0}:{1}".format(*addr)
                         print(msg, log_buffer)
                         break
             finally:
@@ -112,8 +131,6 @@ def server(log_buffer=sys.stderr):
         return
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     server()
     sys.exit(0)
-
-
